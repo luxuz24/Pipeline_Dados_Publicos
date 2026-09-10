@@ -31,4 +31,6 @@ dbt_project/logs/
 .vscode/
 
 # Guia local do projeto
-/docs/
+/docs/*
+!/docs/screenshots/
+!/docs/screenshots/**
