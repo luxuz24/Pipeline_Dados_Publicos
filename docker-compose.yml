@@ -1,13 +1,14 @@
-version: '3.8'
-
 x-airflow-common: &airflow-common
   image: apache/airflow:2.10.5-python3.10
   environment:
     - AIRFLOW__CORE__EXECUTOR=LocalExecutor
     - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-    - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFw2Fill5xEI=
+    - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
     - AIRFLOW__CORE__LOAD_EXAMPLES=false
     - AIRFLOW__CORE__LOGGING_LEVEL=INFO
+    - AIRFLOW_ADMIN_PASSWORD=${AIRFLOW_ADMIN_PASSWORD}
+    - AIRFLOW_CONN_CLICKHOUSE_DEFAULT=${AIRFLOW_CONN_CLICKHOUSE_DEFAULT}
+    - _PIP_ADDITIONAL_REQUIREMENTS=-r /opt/airflow/extractor/requirements.txt
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
@@ -58,17 +59,10 @@ services:
   airflow-init:
     <<: *airflow-common
     container_name: airflow_init
-    command: >
-      bash -c "
-      airflow db migrate &&
-      airflow users create \
-        --username admin \
-        --firstname Admin \
-        --lastname User \
-        --role Admin \
-        --email admin@example.com \
-        --password admin
-      "
+    command: >-
+      bash -c "airflow db migrate && airflow users create
+      --username admin --firstname Admin --lastname User --role Admin
+      --email admin@example.com --password \"$$AIRFLOW_ADMIN_PASSWORD\" || true"
     depends_on:
       postgres:
         condition: service_healthy

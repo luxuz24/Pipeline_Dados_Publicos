@@ -30,3 +30,6 @@ profiles.yml
 .DS_Store
 .idea/
 .vscode/
+
+# Guia local do projeto
+/docs/
