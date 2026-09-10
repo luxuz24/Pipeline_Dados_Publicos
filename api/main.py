@@ -97,3 +97,23 @@ def search_indicator_by_code(codigo_serie: int) -> list[dict[str, Any]]:
             detail=f"Nenhum dado encontrado para a série {codigo_serie}",
         )
     return rows
+
+
+@app.get("/indicadores/{codigo_serie}/analise", tags=["LLM"])
+def get_indicator_analysis(codigo_serie: int) -> list[dict[str, Any]]:
+    rows = query_rows(
+        f"""
+        SELECT codigo_serie, nome_serie, mes_referencia, resumo,
+               provedor, modelo, enriquecido_em
+        FROM {settings.clickhouse_db}.indicadores_enriquecidos FINAL
+        WHERE codigo_serie = {{codigo_serie:UInt32}}
+        ORDER BY mes_referencia DESC
+        """,
+        {"codigo_serie": codigo_serie},
+    )
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Nenhuma análise encontrada para a série {codigo_serie}",
+        )
+    return rows

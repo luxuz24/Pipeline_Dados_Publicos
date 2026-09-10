@@ -2,3 +2,4 @@ fastapi==0.115.11
 uvicorn==0.34.0
 clickhouse-connect==1.8.0
 pydantic-settings==2.8.1
+google-genai>=1.0.0
