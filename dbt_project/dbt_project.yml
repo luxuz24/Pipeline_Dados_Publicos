@@ -1,0 +1,17 @@
+name: pipeline_dados
+version: '1.0.0'
+config-version: 2
+
+profile: pipeline_dados
+
+model-paths: ["models"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  pipeline_dados:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+      +engine: MergeTree()
+      +order_by: ['codigo_serie', 'mes_referencia']

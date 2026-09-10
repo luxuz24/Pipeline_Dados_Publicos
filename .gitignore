@@ -23,7 +23,6 @@ airflow/webserver_config.py
 dbt_project/target/
 dbt_project/dbt_packages/
 dbt_project/logs/
-profiles.yml
 
 # Logs e arquivos do sistema
 *.log
