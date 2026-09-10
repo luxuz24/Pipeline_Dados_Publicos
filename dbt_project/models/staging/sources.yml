@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: pipeline_raw
+    database: "{{ env_var('CLICKHOUSE_DB', 'pipeline_dados') }}"
+    schema: "{{ env_var('CLICKHOUSE_DB', 'pipeline_dados') }}"
+    tables:
+      - name: raw_indicadores
+        description: Dados brutos das series temporais do SGS/BCB.
+        columns:
+          - name: codigo_serie
+            description: Codigo numerico da serie no SGS/BCB.
+          - name: nome_serie
+            description: Nome legivel da serie.
+          - name: data_referencia
+            description: Data de referencia do indicador.
+          - name: valor
+            description: Valor numerico publicado pelo BCB.
+          - name: extraido_em
+            description: Data e hora em que o registro foi ingerido.
+
+models:
+  - name: stg_indicadores
+    description: Dados normalizados e deduplicados por serie e data de referencia.
+    columns:
+      - name: codigo_serie
+        data_tests:
+          - not_null
+      - name: data_referencia
+        data_tests:
+          - not_null
+      - name: valor
+        data_tests:
+          - not_null
+
+  - name: mart_indicadores_mensal
+    description: Resumo mensal dos indicadores do SGS/BCB.
+    columns:
+      - name: codigo_serie
+        data_tests:
+          - not_null
+      - name: mes_referencia
+        data_tests:
+          - not_null

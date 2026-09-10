@@ -8,6 +8,12 @@ x-airflow-common: &airflow-common
     - AIRFLOW__CORE__LOGGING_LEVEL=INFO
     - AIRFLOW_ADMIN_PASSWORD=${AIRFLOW_ADMIN_PASSWORD}
     - AIRFLOW_CONN_CLICKHOUSE_DEFAULT=${AIRFLOW_CONN_CLICKHOUSE_DEFAULT}
+    - CLICKHOUSE_HOST=clickhouse
+    - CLICKHOUSE_PORT=${CLICKHOUSE_PORT}
+    - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+    - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+    - DBT_PROFILES_DIR=/opt/airflow/dbt_project
     - _PIP_ADDITIONAL_REQUIREMENTS=-r /opt/airflow/extractor/requirements.txt
   volumes:
     - ./airflow/dags:/opt/airflow/dags

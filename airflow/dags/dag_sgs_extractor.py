@@ -124,6 +124,23 @@ with DAG(
         execution_timeout=timedelta(minutes=15), # Adicionada a vírgula que faltava na linha de cima
     )
 
+    # Tarefa para transformar a camada raw em staging e mart
+    run_dbt_task = BashOperator(
+        task_id="run_dbt",
+        bash_command=(
+            "set -euo pipefail; "
+            "cd /opt/airflow/dbt_project; "
+            "/home/airflow/.local/bin/dbt run; "
+            "/home/airflow/.local/bin/dbt test"
+        ),
+        env={
+            **get_clickhouse_env(),
+            "DBT_PROFILES_DIR": "/opt/airflow/dbt_project",
+            "PATH": "/home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin",
+        },
+        execution_timeout=timedelta(minutes=15),
+    )
+
     # Tarefa para validar a carga de dados no ClickHouse
     validate_data_load = PythonOperator(
         task_id="validate_data_load",
@@ -132,4 +149,4 @@ with DAG(
     )
 
     # Definindo a ordem das tarefas
-    verify_clickhouse_connection >> run_pipeline_task >> validate_data_load
+    verify_clickhouse_connection >> run_pipeline_task >> run_dbt_task >> validate_data_load
