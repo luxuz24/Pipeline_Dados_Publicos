@@ -105,7 +105,7 @@ def get_indicator_analysis(codigo_serie: int) -> list[dict[str, Any]]:
         f"""
         SELECT codigo_serie, nome_serie, mes_referencia, resumo,
                provedor, modelo, enriquecido_em
-        FROM {settings.clickhouse_db}.indicadores_enriquecidos
+        FROM {settings.clickhouse_db}.indicadores_enriquecidos FINAL
         WHERE codigo_serie = {{codigo_serie:UInt32}}
         ORDER BY mes_referencia DESC
         """,
