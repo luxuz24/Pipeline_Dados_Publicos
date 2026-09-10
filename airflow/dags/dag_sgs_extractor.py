@@ -120,7 +120,7 @@ with DAG(
     run_pipeline_task = BashOperator(
         task_id="run_pipeline",
         bash_command="set -euo pipefail; python /opt/airflow/extractor/extract.py",
-        env=get_clickhouse_env(),
+        env={**os.environ, **get_clickhouse_env()},
         execution_timeout=timedelta(minutes=15), # Adicionada a vírgula que faltava na linha de cima
     )
 
@@ -141,6 +141,16 @@ with DAG(
         execution_timeout=timedelta(minutes=15),
     )
 
+    enrich_with_llm_task = BashOperator(
+        task_id="llm_enrich",
+        bash_command=(
+            "set -euo pipefail; "
+            "python /opt/airflow/extractor/enrich.py"
+        ),
+        env={**os.environ, **get_clickhouse_env()},
+        execution_timeout=timedelta(minutes=15),
+    )
+
     # Tarefa para validar a carga de dados no ClickHouse
     validate_data_load = PythonOperator(
         task_id="validate_data_load",
@@ -149,4 +159,4 @@ with DAG(
     )
 
     # Definindo a ordem das tarefas
-    verify_clickhouse_connection >> run_pipeline_task >> run_dbt_task >> validate_data_load
+    verify_clickhouse_connection >> run_pipeline_task >> run_dbt_task >> validate_data_load >> enrich_with_llm_task
