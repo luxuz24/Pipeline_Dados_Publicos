@@ -1,0 +1,32 @@
+# Ambientes virtuais
+.venv/
+venv/
+ENV/
+env/
+
+# Variáveis de ambiente e segredos (NUNCA COMMITAR)
+.env
+*.env.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Airflow
+airflow/logs/
+airflow/airflow.cfg
+airflow/webserver_config.py
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+profiles.yml
+
+# Logs e arquivos do sistema
+*.log
+.DS_Store
+.idea/
+.vscode/
