@@ -78,6 +78,8 @@ def generate_gemini_summary(indicator: dict) -> str:
         f"Último valor: {indicator['ultimo_valor']}"
     )
     interaction = client.interactions.create(model=GEMINI_MODEL, input=prompt)
+    if interaction.output_text:
+        return interaction.output_text.strip()
     for output in getattr(interaction, "outputs", []):
         text = getattr(output, "text", None)
         if text:
