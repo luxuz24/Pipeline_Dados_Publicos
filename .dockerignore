@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+*.pyc
+airflow/logs
+dbt_project/logs
+dbt_project/target
+docker-compose.yml
+.env

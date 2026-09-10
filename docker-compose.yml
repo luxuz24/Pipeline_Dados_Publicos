@@ -47,6 +47,24 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: pipeline_api
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+    ports:
+      - "8000:8000"
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     image: postgres:17-alpine
     container_name: airflow_postgres
