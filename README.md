@@ -167,7 +167,39 @@ Durante a validação foram obtidos:
 - Endpoint `/indicadores/{codigo_serie}/analise` retornando os resumos persistidos.
 - Swagger exibindo os endpoints da API.
 
-Os screenshots podem ser adicionados em `docs/screenshots/` e referenciados nesta seção.
+### Airflow
+
+Execução completa da DAG, com as cinco tasks concluídas:
+
+![DAG completa com todas as tasks em sucesso](docs/screenshots/Screenshot%202026-09-10%20194813.png)
+
+Detalhes da task `run_pipeline`:
+
+![Detalhes da task run_pipeline](docs/screenshots/Screenshot%202026-09-10%20195000.png)
+
+Detalhes da task `llm_enrich`:
+
+![Detalhes da task llm_enrich](docs/screenshots/Screenshot%202026-09-10%20195707.png)
+
+### FastAPI e Swagger
+
+Health check retornando HTTP 200:
+
+![Health check da API](docs/screenshots/Screenshot%202026-09-10%20195446.png)
+
+Consulta dos indicadores mensais:
+
+![Consulta de indicadores pela API](docs/screenshots/Screenshot%202026-09-10%20195837.png)
+
+Consulta de uma série específica:
+
+![Consulta da série 433](docs/screenshots/Screenshot%202026-09-10%20195742.png)
+
+Análise gerada pelo Gemini para a série 433:
+
+![Análise do indicador gerada pelo Gemini](docs/screenshots/Screenshot%202026-09-10%20195823.png)
+
+As demais evidências da execução ficam disponíveis em [`docs/screenshots/`](docs/screenshots/).
 
 ## Desenvolvimento local
 
