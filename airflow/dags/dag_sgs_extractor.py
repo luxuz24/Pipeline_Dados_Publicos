@@ -1,17 +1,16 @@
 import logging
-import os 
+import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.exceptions import AirflowFailException
-from airflow.operators.bash import BashOperator         # Ajustado o caminho
+from airflow.hooks.base import BaseHook
+from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
-from airflow.utils.trigger_rule import TriggerRule      # Ajustado o caminho
-from airflow.hooks.base import BaseHook                 # Import adicionado
+from airflow.utils.trigger_rule import TriggerRule
 
 logger = logging.getLogger(__name__)
 
-# Configurações Padrão
 default_args = {
     "owner": "Lck3k",
     "depends_on_past": False,
@@ -27,7 +26,6 @@ default_args = {
 
 def alert_failure(context):
     task_instance = context.get("task_instance")
-    # Retirada a vírgula que transformava a variável em uma tupla
     dag_id = context.get("dag").dag_id if context.get("dag") else "Unknown DAG"
     exception = context.get("exception")
     logger.error(
@@ -37,7 +35,6 @@ def alert_failure(context):
         exception,
     )
 
-# Movido para fora da função
 default_args["on_failure_callback"] = alert_failure
 
 
@@ -63,11 +60,14 @@ def _verify_clickhouse_connection(**_):
     env = get_clickhouse_env()
     url = f"http://{env['CLICKHOUSE_HOST']}:{env['CLICKHOUSE_PORT']}/ping"
     try:
-        resp = requests.get(url, timeout=10, auth=(env['CLICKHOUSE_USER'], env['CLICKHOUSE_PASSWORD']))
-        resp.raise_for_status()
-        # Movido para dentro do try para só logar se der status 200
-        logger.info("ClickHouse connection verified successfully.") 
-    except requests.exceptions.RequestException as exc: # Ajustado para requests.exceptions
+        response = requests.get(
+            url,
+            timeout=10,
+            auth=(env["CLICKHOUSE_USER"], env["CLICKHOUSE_PASSWORD"]),
+        )
+        response.raise_for_status()
+        logger.info("ClickHouse connection verified successfully.")
+    except requests.exceptions.RequestException as exc:
         raise AirflowFailException(f"ClickHouse connection failed: {exc}") from exc
 
 
@@ -77,54 +77,56 @@ def _validate_data_load(**_):
     """
     import requests
     env = get_clickhouse_env()
-    query = (f"SELECT count() FROM {env['CLICKHOUSE_DB']}.raw_indicadores "
-        "WHERE toDate(extraido_em) = today() FORMAT TabSeparated")
+    query = (
+        f"SELECT count() FROM {env['CLICKHOUSE_DB']}.raw_indicadores "
+        "WHERE toDate(extraido_em) = today() FORMAT TabSeparated"
+    )
     url = f"http://{env['CLICKHOUSE_HOST']}:{env['CLICKHOUSE_PORT']}/"
     try:
-        resp = requests.post(
+        response = requests.post(
             url,
             params={"query": query},
-            auth=(env['CLICKHOUSE_USER'], env['CLICKHOUSE_PASSWORD']),
+            auth=(env["CLICKHOUSE_USER"], env["CLICKHOUSE_PASSWORD"]),
             timeout=15,
         )
-        resp.raise_for_status()
-        total = int(resp.text.strip() or 0)
+        response.raise_for_status()
+        total = int(response.text.strip() or 0)
     except (requests.exceptions.RequestException, ValueError) as exc:
         raise AirflowFailException(f"Failed to validate data load: {exc}") from exc
 
     if total == 0:
         raise AirflowFailException("No data loaded into ClickHouse for today.")
-    logger.info(f"Data load validation successful: {total} records loaded into ClickHouse.")
+    logger.info(
+        "Data load validation successful: %d records loaded into ClickHouse.",
+        total,
+    )
 
 
 with DAG(
     dag_id="pipeline_extracao_sgs_bcb",
     default_args=default_args,
     description="Extraction of IPCA and Selic data from the BCB API (SGS) to ClickHouse.",
-    schedule="0 9 * * *",  # No Airflow 2.x o parâmetro é 'schedule' e não 'schedule_interval'
-    start_date=datetime(2025, 1, 1), 
+    schedule="0 9 * * *",
+    start_date=datetime(2025, 1, 1),
     catchup=False,
     max_active_runs=1,
-    dagrun_timeout=timedelta(minutes=45), # Corrigido o typo 'degrun_timeout'
-    tags=["bcb", "clickhouse","ingestion"],
+    dagrun_timeout=timedelta(minutes=45),
+    tags=["bcb", "clickhouse", "ingestion"],
     doc_md=__doc__,
 ) as dag:
     
-    # Tarefa para verificar a conexão com ClickHouse
     verify_clickhouse_connection = PythonOperator(
         task_id="verify_clickhouse_connection",
         python_callable=_verify_clickhouse_connection,
     )
 
-    # Tarefa para executar o pipeline de extração
     run_pipeline_task = BashOperator(
         task_id="run_pipeline",
         bash_command="set -euo pipefail; python /opt/airflow/extractor/extract.py",
         env={**os.environ, **get_clickhouse_env()},
-        execution_timeout=timedelta(minutes=15), # Adicionada a vírgula que faltava na linha de cima
+        execution_timeout=timedelta(minutes=15),
     )
 
-    # Tarefa para transformar a camada raw em staging e mart
     run_dbt_task = BashOperator(
         task_id="run_dbt",
         bash_command=(
@@ -151,12 +153,16 @@ with DAG(
         execution_timeout=timedelta(minutes=15),
     )
 
-    # Tarefa para validar a carga de dados no ClickHouse
     validate_data_load = PythonOperator(
         task_id="validate_data_load",
         python_callable=_validate_data_load,
-        trigger_rule=TriggerRule.ALL_SUCCESS,  
+        trigger_rule=TriggerRule.ALL_SUCCESS,
     )
 
-    # Definindo a ordem das tarefas
-    verify_clickhouse_connection >> run_pipeline_task >> run_dbt_task >> validate_data_load >> enrich_with_llm_task
+    (
+        verify_clickhouse_connection
+        >> run_pipeline_task
+        >> run_dbt_task
+        >> validate_data_load
+        >> enrich_with_llm_task
+    )
